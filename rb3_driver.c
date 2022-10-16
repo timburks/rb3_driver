@@ -21,7 +21,7 @@
  * 
  */
 
-#include <libusb.h>
+#include <libusb-1.0/libusb.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,7 +100,7 @@
 #define MIDI_CHANMASK    0xf
 #define MIDI_NUMPATCHES  0x80
 
-#define SLEEP_IF_CHOOSEDEVICE() do { if (chooseDevice) sleep(3); } while (0)
+#define SLEEP_IF_CHOOSEDEVICE() do { if (chooseDevice) sleep(5); } while (0)
 
 uint8_t drumMapNotes[] = {
     35, 36, 38, 40, 41, 47,
@@ -168,6 +168,8 @@ int main(int argc, char **argv) {
             if (pmdInfo != NULL && pmdInfo->output != 0) {
                 if (j == k) {
                     pmDev = i;
+                                    fprintf(stderr, "SELECTED %d: \"%s\"\n", j, pmdInfo->name);
+
                     break;
                 }
                 ++j;
@@ -234,6 +236,7 @@ int main(int argc, char **argv) {
     }
     my_atexit(myusb_close, h);
 
+    libusb_detach_kernel_driver(h, interface_number);
     r = libusb_claim_interface(h, interface_number);
     if (r < 0) {
         fprintf(stderr, "Failed to claim input device interface\n");
@@ -287,10 +290,10 @@ int main(int argc, char **argv) {
         if (memcmp(curBuffer, lastBuffer, DATA_BUFFER_LEN) != 0) {
 
             // DEBUG: dump input USB packet
-            //for (i = 0; i < DATA_BUFFER_LEN; i++) {
-            //    fprintf(stderr, " %02x", curBuffer[i]);
-            //}
-            //fprintf(stderr, "\n");
+            for (i = 0; i < DATA_BUFFER_LEN; i++) {
+                fprintf(stderr, " %02x", curBuffer[i]);
+            }
+            fprintf(stderr, "\n");
 
             // Octave and program change
 
@@ -475,8 +478,8 @@ int main(int argc, char **argv) {
                             // Note On
                             chan = NORMAL_CHAN;
                             note = firstNote + keyIndex;
-                            //printf("\x90%c\x40", note);
-                            //fprintf(stderr, "Sending NoteOn(%d)\n", note);
+                            printf("\x90%c\x40", note);
+                            fprintf(stderr, "Sending NoteOn(%d)\n", note);
                             if (keyIndex < DRUMMAP_NKEYS) {
                                 if (drumMapOn) {
                                     chan = DRUMMAP_CHAN;
@@ -498,8 +501,8 @@ int main(int argc, char **argv) {
                             ++numKeysDown;
                         } else {
                             // Note Off
-                            //printf("\x80%c\x40", notesDown[keyIndex]);
-                            //fprintf(stderr, "Sending NoteOff(%d)\n", notesDown[keyIndex]);
+                            printf("\x80%c\x40", notesDown[keyIndex]);
+                            fprintf(stderr, "Sending NoteOff(%d)\n", notesDown[keyIndex]);
                             chan = NORMAL_CHAN;
                             if (keyIndex < DRUMMAP_NKEYS) {
                                 chan = chansDown[keyIndex];
@@ -509,7 +512,7 @@ int main(int argc, char **argv) {
                                            notesDown[keyIndex], 0x40));
                             --numKeysDown;
                         }
-                        //fflush(stdout);
+                        fflush(stdout);
                     }
                     if (cv != 0) {
                         ++velsKeyIndex;

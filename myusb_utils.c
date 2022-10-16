@@ -47,6 +47,7 @@ libusb_device *myusb_get_device_by_prod_name_prefix(const char *prefix, int inde
     int r;
     size_t prefixLen = strlen(prefix);
     for (i = 0; i < cnt && !result; i++) {
+        fprintf(stderr, "%ld\n", i);
         r = libusb_get_device_descriptor(devs[i], &desc);
         if (r < 0) {
             continue;
@@ -55,8 +56,11 @@ libusb_device *myusb_get_device_by_prod_name_prefix(const char *prefix, int inde
         if (r < 0) {
             continue;
         }
+                fprintf(stderr, "%ld\n", i);
+
         r = libusb_get_string_descriptor_ascii(h, desc.iProduct,
                                                prodName, MAX_PRODUCT_LEN);
+                                               fprintf(stderr, "%s\n", prodName);
         if (r >= 0 && strncmp(prefix, prodName, prefixLen) == 0) {
             if (index == 0) {
                 result = devs[i];
